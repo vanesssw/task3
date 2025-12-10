@@ -1,0 +1,16 @@
+.git
+.gitignore
+.idea
+.vscode
+.cursor
+__pycache__/
+.pytest_cache/
+.venv
+env
+venv
+*.db
+news.db
+playwright/.cache/
+Dockerfile
+docker-compose.yml
+
