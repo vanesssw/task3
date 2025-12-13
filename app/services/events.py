@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import Any
+from app.nats.client import NATS_SUBJECT, nats_client
+from app.ws.manager import ws_manager
 
 def _to_jsonable(obj: Any) -> Any:
     if isinstance(obj, datetime):
@@ -9,10 +11,6 @@ def _to_jsonable(obj: Any) -> Any:
     if isinstance(obj, list):
         return [_to_jsonable(v) for v in obj]
     return obj
-
-from app.nats.client import NATS_SUBJECT, nats_client
-from app.ws.manager import ws_manager
-
 
 async def broadcast_change(event: str, payload: dict[str, Any]) -> None:
     safe_payload = _to_jsonable(payload)

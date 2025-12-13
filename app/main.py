@@ -43,11 +43,9 @@ async def nats_message_handler(msg: NatsMsg) -> None:
         logger.warning("Received non-JSON NATS message")
         return
     logger.info("NATS message received: %s", payload)
-    
-    # Форвардим в WebSocket
+
     await ws_manager.broadcast({"event": "nats.forwarded", "data": payload})
-    
-    # Обновляем локальную БД при получении событий извне
+
     event = payload.get("event")
     data = payload.get("data", {})
     
@@ -55,8 +53,7 @@ async def nats_message_handler(msg: NatsMsg) -> None:
         async with AsyncSessionMaker() as session:
             from app.models.news import NewsItem
             from sqlalchemy import select
-            
-            # Проверяем, есть ли уже такой элемент
+
             stmt = select(NewsItem).where(NewsItem.url == data.get("url"))
             result = await session.execute(stmt)
             existing = result.scalar_one_or_none()
