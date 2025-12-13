@@ -32,13 +32,13 @@ async def publish_message():
     
     for message in messages:
         await nc.publish("items.updates", json.dumps(message).encode())
-        print(f"✅ Отправлено сообщение в NATS:")
+        print(f"   Отправлено сообщение в NATS:")
         print(f"   Subject: items.updates")
         print(f"   Event: {message['event']}")
         print(f"   Data: {json.dumps(message['data'], indent=2, ensure_ascii=False)}\n")
     
     await nc.close()
-    print("💡 Проверь логи приложения и WebSocket для подтверждения получения сообщения")
+    print(" Проверь логи приложения и WebSocket для подтверждения получения сообщения")
 
 
 if __name__ == "__main__":

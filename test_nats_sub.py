@@ -17,7 +17,7 @@ async def subscribe_to_nats():
     async def message_handler(msg):
         try:
             payload = json.loads(msg.data.decode())
-            print(f"\n📨 Получено сообщение из NATS:")
+            print(f"\n Получено сообщение из NATS:")
             print(f"   Subject: {msg.subject}")
             print(f"   Data: {json.dumps(payload, indent=2, ensure_ascii=False)}")
         except Exception as e:
