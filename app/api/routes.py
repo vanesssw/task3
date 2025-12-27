@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from typing import Any, List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
@@ -14,6 +16,8 @@ from app.models.news import NewsItem
 from sqlalchemy import select
 
 router = APIRouter()
+
+templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/items", response_model=List[NewsRead])
@@ -75,3 +79,13 @@ async def run_task_now() -> dict[str, Any]:
     payload = await run_background_fetch(AsyncSessionMaker, datetime.now(timezone.utc))
     return {"status": "scheduled", **payload}
 
+
+@router.get("/news", response_class=HTMLResponse)
+async def news_page(request: Request, css_url: str | None = None):
+    """Render HTML page with latest news. Optional query param `css_url` to load external CSS (e.g., from Yandex Cloud Storage)."""
+    async with AsyncSessionMaker() as session:
+        stmt = select(NewsItem).order_by(NewsItem.id.desc()).limit(50)
+        result = await session.execute(stmt)
+        items = result.scalars().all()
+
+    return templates.TemplateResponse("news.html", {"request": request, "news_list": items, "css_url": css_url})

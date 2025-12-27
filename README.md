@@ -345,6 +345,34 @@ docker compose ps
 ### База данных не создаётся
 Проверь права на запись в директории проекта.
 
+## Статические ресурсы и размещение в Yandex Cloud Storage
+
+Вы можете хранить `HTML` и `CSS` в Yandex Cloud Storage (S3-совместимый бакет) и указывать публичные ссылки в параметре `css_url`, чтобы страница загружала внешний стиль.
+
+1. Подготовьте CSS-файл, например `news.css` (в проекте есть `static/news.css`).
+2. Загрузите файл в бакет через веб-интерфейс или `yc`/`aws s3` команды.
+
+Пример загрузки с помощью `aws-cli` (S3-совместимый endpoint Yandex Cloud):
+
+```bash
+# пример для yc S3-compatible endpoint, настройте профиль и endpoint заранее
+aws --endpoint-url https://storage.yandexcloud.net s3 cp static/news.css s3://my-bucket/path/news.css
+```
+
+3. Сделайте объект публичным (в настройках бакета/объекта) или используйте временную ссылку.
+4. На клиенте укажите ссылку как query-параметр `css_url` при запросе страницы `/news`:
+
+Пример:
+```
+# локально
+http://localhost:8000/news?css_url=https://storage.yandexcloud.net/my-bucket/path/news.css
+```
+
+Если `css_url` не указан или объект недоступен, шаблон использует встроенные стили (фолбек).
+
+Для локной отладки можно просто открыть локальный файл стилей, если настроить отдачу статических файлов через FastAPI (могу помочь настроить `app.mount("/static", StaticFiles(directory="static"), name="static")`, если нужно).
+
+
 ## Лицензия
 
 MIT
