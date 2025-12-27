@@ -15,7 +15,6 @@ from app.nats.client import NATS_SUBJECT, NatsMsg, nats_client
 from app.tasks.fetcher import periodic_task
 from app.ws.manager import ws_manager
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("hltv_app")
 
 LOG_DIR = "/var/log/hltv_app"
