@@ -1,6 +1,8 @@
 import asyncio
 import json
 import logging
+import os
+from logging.handlers import RotatingFileHandler
 from typing import Any, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -13,8 +15,28 @@ from app.nats.client import NATS_SUBJECT, NatsMsg, nats_client
 from app.tasks.fetcher import periodic_task
 from app.ws.manager import ws_manager
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("hltv_app")
+
+LOG_DIR = "/var/log/hltv_app"
+LOG_FILE = os.path.join(LOG_DIR, "app.log")
+
+os.makedirs(LOG_DIR, exist_ok=True)
+
+logger = logging.getLogger("hltv_app")
+logger.setLevel(logging.INFO)
+
+file_handler = RotatingFileHandler(
+    LOG_FILE,
+    maxBytes=10 * 1024 * 1024,  # 10 MB
+    backupCount=5
+)
+
+formatter = logging.Formatter(
+    "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 app = FastAPI(title="HLTV News Service", version="1.0.0")
 app.add_middleware(
