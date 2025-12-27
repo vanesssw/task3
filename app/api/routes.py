@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +14,7 @@ from app.services.news_service import get_news_or_404
 from app.tasks.fetcher import run_background_fetch
 from app.models.news import NewsItem
 from sqlalchemy import select
+from app.config import EXTERNAL_CSS_URL, EXTERNAL_HTML_URL
 
 router = APIRouter()
 
@@ -81,11 +82,30 @@ async def run_task_now() -> dict[str, Any]:
 
 
 @router.get("/news", response_class=HTMLResponse)
-async def news_page(request: Request, css_url: str | None = None):
-    """Render HTML page with latest news. Optional query param `css_url` to load external CSS (e.g., from Yandex Cloud Storage)."""
+async def news_page(request: Request, css_url: str | None = None, html_url: str | None = None):
+    """Render HTML page with latest news or redirect to external HTML.
+
+    Priority for HTML:
+      1. Query param `html_url`
+      2. `EXTERNAL_HTML_URL` from config
+      3. Render local template
+
+    Priority for CSS:
+      1. Query param `css_url`
+      2. `EXTERNAL_CSS_URL` from config
+      3. None (template fallback)
+    """
+    # If query param provided, prefer that. Otherwise fallback to config.
+    chosen_html = html_url or EXTERNAL_HTML_URL
+    if chosen_html:
+        # Redirect to external HTML page (preserve method via 307 temporary redirect)
+        return RedirectResponse(url=chosen_html, status_code=307)
+
+    chosen_css = css_url or EXTERNAL_CSS_URL
+
     async with AsyncSessionMaker() as session:
         stmt = select(NewsItem).order_by(NewsItem.id.desc()).limit(50)
         result = await session.execute(stmt)
         items = result.scalars().all()
 
-    return templates.TemplateResponse("news.html", {"request": request, "news_list": items, "css_url": css_url})
+    return templates.TemplateResponse("news.html", {"request": request, "news_list": items, "css_url": chosen_css})

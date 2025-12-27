@@ -373,6 +373,45 @@ http://localhost:8000/news?css_url=https://storage.yandexcloud.net/my-bucket/pat
 Для локной отладки можно просто открыть локальный файл стилей, если настроить отдачу статических файлов через FastAPI (могу помочь настроить `app.mount("/static", StaticFiles(directory="static"), name="static")`, если нужно).
 
 
+### Использование внешнего хостинга HTML/CSS
+
+По умолчанию endpoint `/news` теперь редиректит на внешний HTML-файл, если в конфигурации задана переменная `EXTERNAL_HTML_URL` (или если задана переменная окружения `EXTERNAL_HTML_URL`). В проекте по умолчанию эти значения установлены на:
+
+- EXTERNAL_HTML_URL: https://storage.yandexcloud.net/prodproject/news.html
+- EXTERNAL_CSS_URL: https://storage.yandexcloud.net/prodproject/news.css
+
+Примеры:
+
+- По умолчанию (редирект на внешний HTML):
+```
+http://localhost:8000/news
+```
+Ответ: 307 Temporary Redirect -> https://storage.yandexcloud.net/prodproject/news.html
+
+- Принудительно рендерить локальный шаблон, но подключить внешний CSS:
+```
+http://localhost:8000/news?css_url=https://storage.yandexcloud.net/prodproject/news.css
+```
+
+- Перенаправить на другой внешний HTML, указав `html_url` в query:
+```
+http://localhost:8000/news?html_url=https://storage.yandexcloud.net/prodproject/other.html
+```
+
+Как переопределить поведение через переменные окружения:
+
+```bash
+# Задать другой внешний HTML
+export EXTERNAL_HTML_URL="https://storage.yandexcloud.net/my-bucket/news.html"
+# Задать внешний CSS
+export EXTERNAL_CSS_URL="https://storage.yandexcloud.net/my-bucket/news.css"
+# или unset, чтобы всегда рендерить локально
+unset EXTERNAL_HTML_URL
+```
+
+Если хотите, чтобы приложение всегда рендерило локально и просто подставляло внешний CSS (без редиректа), скажите — я быстро поменяю логику `/news` (уберу redirect и всегда рендерю шаблон, подставляя EXTERNAL_CSS_URL по умолчанию).
+
+
 ## Лицензия
 
 MIT

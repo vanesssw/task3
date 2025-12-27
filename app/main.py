@@ -3,10 +3,11 @@ import json
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router as api_router
 from app.config import FETCH_INTERVAL
@@ -15,12 +16,10 @@ from app.nats.client import NATS_SUBJECT, NatsMsg, nats_client
 from app.tasks.fetcher import periodic_task
 from app.ws.manager import ws_manager
 
-logger = logging.getLogger("hltv_app")
-
-LOG_DIR = "/var/log/hltv_app"
-LOG_FILE = os.path.join(LOG_DIR, "app.log")
-
+# Logging: use project-local logs directory by default; override with HLTV_LOG_DIR env var
+LOG_DIR = os.getenv("HLTV_LOG_DIR", "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 logger = logging.getLogger("hltv_app")
 logger.setLevel(logging.INFO)
@@ -28,15 +27,18 @@ logger.setLevel(logging.INFO)
 file_handler = RotatingFileHandler(
     LOG_FILE,
     maxBytes=10 * 1024 * 1024,  # 10 MB
-    backupCount=5
+    backupCount=5,
+    encoding="utf-8",
 )
 
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-)
-
+formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
+
+# Also log to console
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 app = FastAPI(title="HLTV News Service", version="1.0.0")
 app.add_middleware(
@@ -45,6 +47,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Mount local static files for development (serves /static/news.css)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(api_router)
 
 
@@ -167,4 +171,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
-
