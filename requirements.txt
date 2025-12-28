@@ -4,4 +4,4 @@ sqlalchemy
 aiosqlite
 nats-py
 playwright
-
+jinja2

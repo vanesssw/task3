@@ -29,7 +29,7 @@ class NatsClient:
         try:
             self.nc = await nats.connect(self.url, connect_timeout=2)
             logger.info("Connected to NATS: %s", self.url)
-        except Exception as exc:  # pragma: no cover - сетевой код
+        except Exception as exc:
             logger.warning("NATS connection failed: %s", exc)
             self.nc = None
 
